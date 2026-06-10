@@ -9,10 +9,11 @@ import requests
 
 warnings.filterwarnings("ignore")
 
-DATA_DIR  = os.path.dirname(os.path.abspath(__file__))
-EXPIRY_SI = datetime(2026, 7, 28)
-EXPIRY_GC = datetime(2026, 7, 28)
-RISK_FREE = 0.045
+DATA_DIR         = os.path.dirname(os.path.abspath(__file__))
+EXPIRY_SI        = datetime(2026, 9, 26)   # SIU26 last trading day
+EXPIRY_GC        = datetime(2026, 7, 28)   # GCQ26 last trading day
+RISK_FREE        = 0.045
+GC_BASIS_CUTOFF  = pd.Timestamp("2026-05-29")  # GCM26 -> GCQ26 roll date
 
 print(f"DATA_DIR : {DATA_DIR}")
 print(f"Expiry SI: {EXPIRY_SI.date()}  |  Expiry GC: {EXPIRY_GC.date()}")
@@ -27,24 +28,26 @@ def load_barchart_csv(path):
     return df.sort_values("Time").reset_index(drop=True)
 
 def discover_files(data_dir):
-    files  = os.listdir(data_dir)
-    opt_si = sorted(f for f in files if re.match(r"siq\d+_\d+c_price-history", f))
-    opt_gc = sorted(f for f in files if re.match(r"gcq\d+_\d+c_price-history", f))
-    und_si = next((f for f in files if re.match(r"siq\d+_daily_historical", f)), None)
-    und_gc = next((f for f in files if re.match(r"gcq\d+_daily_historical", f)), None)
+    files   = os.listdir(data_dir)
+    opt_si  = sorted(f for f in files if re.match(r"siu\d+_\d+c_price-history", f))
+    opt_gc  = sorted(f for f in files if re.match(r"gcq\d+_\d+c_price-history", f))
+    und_si  = next((f for f in files if re.match(r"siu\d+_daily_historical", f)), None)
+    und_gc  = next((f for f in files if re.match(r"gcq\d+_daily_historical", f)), None)
+    und_gcm = next((f for f in files if re.match(r"gcm\d+_daily_historical", f)), None)
     print("\nSI option files :", opt_si)
     print("GC option files :", opt_gc)
     print("SI underlying   :", und_si)
     print("GC underlying   :", und_gc)
-    return opt_si, opt_gc, und_si, und_gc
+    print("GCM26 underlying:", und_gcm)
+    return opt_si, opt_gc, und_si, und_gc, und_gcm
 
 def parse_si_strike(filename):
-    m = re.search(r"siq\d+_(\d+)c_", filename)
+    m = re.search(r"siu\d+_(\d+)c_", filename)
     if not m:
         return None
     nominal = int(m.group(1))
     if nominal == 1000:
-        nominal = 10000          # Barchart dropped a zero for the $100 strike
+        nominal = 10000          # Barchart drops a zero for the $100 strike
     return nominal / 100.0       # cents/oz -> $/oz
 
 def parse_gc_strike(filename):
@@ -82,7 +85,7 @@ def implied_vol(C_mkt, F, K, T, r):
         return np.nan
 
 # ── discover files & load underlyings ─────────────────────────────────────────
-opt_si_files, opt_gc_files, und_si_file, und_gc_file = discover_files(DATA_DIR)
+opt_si_files, opt_gc_files, und_si_file, und_gc_file, und_gcm_file = discover_files(DATA_DIR)
 
 si_spot = (load_barchart_csv(os.path.join(DATA_DIR, und_si_file))
            [["Time", "Latest"]].rename(columns={"Latest": "F"}))
@@ -91,6 +94,28 @@ gc_spot = (load_barchart_csv(os.path.join(DATA_DIR, und_gc_file))
 
 print(f"\nSI spot: {len(si_spot)} days  |  latest F = ${si_spot['F'].iloc[-1]:.3f}/oz")
 print(f"GC spot: {len(gc_spot)} days  |  latest F = ${gc_spot['F'].iloc[-1]:.2f}/oz")
+
+# ── Gold basis adjustment (pre-roll: substitute GCM26 price for GCQ26) ────────
+# For dates before GC_BASIS_CUTOFF, Polymarket resolves on GCM26 (June 2026)
+# settlement. We correct the Black-76 forward: F_adj = F_GCQ26 - basis,
+# where basis = GCQ26 - GCM26, which equals F_GCM26.
+if und_gcm_file:
+    gcm_spot = (load_barchart_csv(os.path.join(DATA_DIR, und_gcm_file))
+                [["Time", "Latest"]].rename(columns={"Latest": "F_M26"}))
+    gc_adj = gc_spot.merge(gcm_spot, on="Time", how="left")
+    basis  = gc_adj["F"] - gc_adj["F_M26"]
+    n_adj  = (gc_adj["Time"] < GC_BASIS_CUTOFF).sum()
+    print(f"\nGC basis adjustment: {n_adj} pre-{GC_BASIS_CUTOFF.date()} rows adjusted")
+    print(f"  Basis range (GCQ26 - GCM26): ${basis.dropna().min():.2f} - ${basis.dropna().max():.2f}")
+    gc_adj["F"] = np.where(
+        gc_adj["Time"] < GC_BASIS_CUTOFF,
+        gc_adj["F_M26"],
+        gc_adj["F"],
+    )
+    gc_spot_adj = gc_adj[["Time", "F"]].dropna(subset=["F"])
+else:
+    print("\n[warn] GCM26 file not found -- Gold basis adjustment skipped")
+    gc_spot_adj = gc_spot
 
 # ── process options ────────────────────────────────────────────────────────────
 def process_options(option_files, parse_strike_fn, spot_df, expiry, label):
@@ -119,7 +144,7 @@ def process_options(option_files, parse_strike_fn, spot_df, expiry, label):
 print("\nProcessing Silver options...")
 si_opts = process_options(opt_si_files, parse_si_strike, si_spot, EXPIRY_SI, "SI")
 print("\nProcessing Gold options...")
-gc_opts = process_options(opt_gc_files, parse_gc_strike, gc_spot, EXPIRY_GC, "GC")
+gc_opts = process_options(opt_gc_files, parse_gc_strike, gc_spot_adj, EXPIRY_GC, "GC")
 options_df = pd.concat([si_opts, gc_opts], ignore_index=True)
 print(f"\nTotal option rows: {len(options_df)}")
 
@@ -171,7 +196,6 @@ pm_df = pd.concat([si_pm, gc_pm], ignore_index=True)
 print(f"Polymarket total: {len(pm_df)} rows")
 
 # ── merge ──────────────────────────────────────────────────────────────────────
-# Polymarket API can emit two ticks per calendar day; keep the last one
 pm_dedup = pm_df.sort_values("date").drop_duplicates(
     subset=["date", "underlying", "strike"], keep="last"
 )
@@ -191,3 +215,10 @@ print(f"\n-- Latest snapshot ({merged['date'].max()}) --------------------------
 print(latest[["underlying", "strike", "F", "option_price", "iv", "nd2", "pm_prob"]]
       .sort_values(["underlying", "strike"])
       .to_string(index=False, float_format=lambda x: f"{x:.4f}"))
+
+# ── delta summary statistics ───────────────────────────────────────────────────
+merged["delta"] = merged["nd2"] - merged["pm_prob"]
+print(f"\n-- Delta summary (nd2 - pm_prob) by asset --")
+print(merged.groupby("underlying")["delta"]
+      .describe()[["count", "mean", "std", "min", "25%", "50%", "75%", "max"]]
+      .to_string(float_format=lambda x: f"{x:.4f}"))
