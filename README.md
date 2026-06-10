@@ -32,9 +32,9 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 ├── daily_options.csv                # Accumulated option prices from Barchart (appended daily)
 ├── merged_iv_polymarket.csv         # Pipeline output: IV + N(d2) merged with Polymarket
 │
-├── siq26_daily_historical-*.csv     # Silver futures daily price history (Barchart download)
+├── siu26_daily_historical-*.csv     # Silver futures daily price history (Barchart download)
 ├── gcq26_daily_historical-*.csv     # Gold futures daily price history (Barchart download)
-├── siq6_*c_price-history-*.csv      # Silver option price histories by strike (Barchart download)
+├── siu6_*c_price-history-*.csv      # Silver option price histories by strike (Barchart download)
 ├── gcq6_*c_price-history-*.csv      # Gold option price histories by strike (Barchart download)
 │
 └── .github/
@@ -46,7 +46,7 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 
 ### Historical option prices (Barchart)
 
-The `siq6_*` and `gcq6_*` CSV files were downloaded manually from [barchart.com](https://www.barchart.com). Each file contains the full price history for one strike. The last line of every file is a `"Downloaded from Barchart.com..."` footer that the pipeline strips automatically.
+The `siu6_*` and `gcq6_*` CSV files were downloaded manually from [barchart.com](https://www.barchart.com). Each file contains the full price history for one strike. The last line of every file is a `"Downloaded from Barchart.com..."` footer that the pipeline strips automatically.
 
 Unit conventions (important for Black-76):
 - **Silver**: underlying price in \$/oz; option premium in \$/oz; strike in the *filename* is in ¢/oz (e.g. `7000c` = \$70.00/oz strike)
