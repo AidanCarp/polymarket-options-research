@@ -12,8 +12,12 @@ Under Black-76, N(d2) is the risk-neutral probability that the futures price exc
 
 | Underlying | Futures contract | Strikes covered | Polymarket event |
 |---|---|---|---|
-| Silver (SI) | SIQ26 (Aug 2026) | $65, $70, $75, $80, $85, $90, $95, $100 /oz | "Will SI settle over $X on the final trading day of June 2026?" |
+| Silver (SI) | SIU26 (Sep 2026) | $65, $70, $75, $80, $85, $90, $95, $100 /oz | "Silver above $X end of June?" |
 | Gold (GC) | GCQ26 (Aug 2026) | $4600, $4800, $5000, $5200 /oz | "Gold above $X end of June?" |
+
+## Note
+
+For Gold, the Active Month against which Polymarket resolves shifted during the sample period: GCM26 (June 2026 futures) was the Active Month from contract open until May 28 2026, after which GCQ26 (August 2026 futures) became the Active Month. The pipeline uses GCM26 settlement prices as the Black-76 forward input for the pre-roll period and GCQ26 from May 29 onwards. GCM26 historical options data was unavailable; GCQ26 implied volatility is used throughout as the volatility input.
 
 
 
@@ -78,9 +82,10 @@ Key parameters at the top of the config cell:
 
 | Variable | Default | Description |
 |---|---|---|
-| `EXPIRY_SI` | 2026-07-28 | SIQ26 options last trading day |
+| `EXPIRY_SI` | 2026-09-26 | SIQ26 options last trading day |
 | `EXPIRY_GC` | 2026-07-28 | GCQ26 options last trading day |
 | `RISK_FREE` | 0.045 | Annualised risk-free rate |
+| `GC_BASIS_CUTOFF` | 2026-05-29 | Date Gold Active Month rolled from GCM26 to GCQ26 |
 
 Verify expiry dates against the [CME Group contract specifications](https://www.cmegroup.com/markets/metals/precious/silver.html) before using results in the paper.
 
