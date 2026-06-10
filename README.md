@@ -4,18 +4,18 @@ This project compares the risk-neutral probabilities embedded in COMEX futures o
 
 ## Research question
 
-Do prediction markets price tail events in commodity futures consistently with the options market? Specifically: is the Polymarket "yes" price for "Silver settles above $X" on a given day close to N(d2) derived from the corresponding call option via Black's model?
+Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver settles above $X" on a given day close to N(d2) derived from the corresponding call option via the Black Scholes model?
 
-Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at expiry. A Polymarket contract paying \$1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
+Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at expiry. A Polymarket contract paying $1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
 
 ## Instruments
 
 | Underlying | Futures contract | Strikes covered | Polymarket event |
 |---|---|---|---|
 | Silver (SI) | SIQ26 (Aug 2026) | $65, $70, $75, $80, $85, $90, $95, $100 /oz | "Will SI settle over $X on the final trading day of June 2026?" |
-| Gold (GC) | GCQ26 (Aug 2026) | $4600, $4800, $5000, $5200 /oz | "Will GC settle over $X on the final trading day of June 2026?" |
+| Gold (GC) | GCQ26 (Aug 2026) | $4600, $4800, $5000, $5200 /oz | "Gold above $X end of June?" |
 
-**Calendar basis note.** The Barchart options are priced against the August 2026 futures contract, while the Polymarket markets reference the *June* 2026 settlement. This introduces a known basis between N(d2) and the Polymarket probability that is part of the analysis.
+
 
 ## Repository structure
 
