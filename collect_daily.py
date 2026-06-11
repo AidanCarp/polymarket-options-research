@@ -32,17 +32,17 @@ PM_FIELDS        = ["date", "underlying", "strike", "pm_prob"]
 # SI strikes are in cents/oz in the symbol (7000 ¢ = $70.00/oz)
 # GC strikes are already in $/oz in the symbol
 OPTION_CONTRACTS = {
-    "SIQ26C6500^0":  ("SI",   65.0),
-    "SIQ26C7000^0":  ("SI",   70.0),
-    "SIQ26C7500^0":  ("SI",   75.0),
-    "SIQ26C8000^0":  ("SI",   80.0),
-    "SIQ26C8500^0":  ("SI",   85.0),
-    "SIQ26C9000^0":  ("SI",   90.0),
-    "SIQ26C9500^0":  ("SI",   95.0),
-    "SIQ26C10000^0": ("SI",  100.0),
-    "SIQ26C11000^0": ("SI",  110.0),
-    "SIQ26C12000^0": ("SI",  120.0),
-    "SIQ26C14000^0": ("SI",  140.0),
+    "SIU26C6500^0":  ("SI",   65.0),
+    "SIU26C7000^0":  ("SI",   70.0),
+    "SIU26C7500^0":  ("SI",   75.0),
+    "SIU26C8000^0":  ("SI",   80.0),
+    "SIU26C8500^0":  ("SI",   85.0),
+    "SIU26C9000^0":  ("SI",   90.0),
+    "SIU26C9500^0":  ("SI",   95.0),
+    "SIU26C10000^0": ("SI",  100.0),
+    "SIU26C11000^0": ("SI",  110.0),
+    "SIU26C12000^0": ("SI",  120.0),
+    "SIU26C14000^0": ("SI",  140.0),
     "GCQ26C4600^0":  ("GC", 4600.0),
     "GCQ26C4800^0":  ("GC", 4800.0),
     "GCQ26C5000^0":  ("GC", 5000.0),
@@ -57,7 +57,7 @@ OPTION_CONTRACTS = {
     "GCQ26C8000^0":  ("GC", 8000.0),
 }
 
-UNDERLYING_SYMBOLS = {"SI": "SIQ26", "GC": "GCQ26"}
+UNDERLYING_SYMBOLS = {"SI": "SIU26", "GC": "GCQ26"}
 
 # Polymarket "yes" token IDs (P(price > strike at June 2026 expiry))
 PM_TOKENS = {
