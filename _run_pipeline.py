@@ -9,11 +9,12 @@ import requests
 
 warnings.filterwarnings("ignore")
 
-DATA_DIR         = os.path.dirname(os.path.abspath(__file__))
-EXPIRY_SI        = datetime(2026, 9, 26)   # SIU26 last trading day
-EXPIRY_GC        = datetime(2026, 7, 28)   # GCQ26 last trading day
-RISK_FREE        = 0.045
-GC_BASIS_CUTOFF  = pd.Timestamp("2026-05-29")  # GCM26 -> GCQ26 roll date
+DATA_DIR           = os.path.dirname(os.path.abspath(__file__))
+EXPIRY_SI          = datetime(2026, 9, 25)   # SIU26 last trading day (4th-to-last BD of Sep 2026; Sep 7=Labor Day)
+EXPIRY_GC          = datetime(2026, 7, 28)   # GCQ26 last trading day (4th-to-last BD of Jul 2026; Jul 3=Independence Day observed)
+RISK_FREE          = 0.045
+GC_BASIS_CUTOFF    = pd.Timestamp("2026-05-29")  # GCM26 -> GCQ26 roll date
+PM_RESOLUTION_DATE = pd.Timestamp("2026-06-30")  # Polymarket markets resolve on this date
 
 print(f"DATA_DIR : {DATA_DIR}")
 print(f"Expiry SI: {EXPIRY_SI.date()}  |  Expiry GC: {EXPIRY_GC.date()}")
@@ -212,6 +213,12 @@ pm_dedup = pm_df.sort_values("date").drop_duplicates(
     subset=["date", "underlying", "strike"], keep="last"
 )
 merged = options_df.merge(pm_dedup, on=["date", "underlying", "strike"], how="inner")
+
+# Drop post-resolution rows: Polymarket emits 0/1 prices after settlement
+# and GCQ26 options continue trading through July 28, so without this guard
+# a re-run after resolution would silently pollute every downstream analysis.
+merged = merged[pd.to_datetime(merged["date"]) < PM_RESOLUTION_DATE].copy()
+
 print(f"\nMerged rows : {len(merged)}")
 print(f"Date range  : {merged['date'].min()}  ->  {merged['date'].max()}")
 print(f"SI strikes  : {sorted(merged.loc[merged.underlying=='SI','strike'].unique())}")
