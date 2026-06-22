@@ -1,3 +1,3 @@
-asset,n_days,mean_daily_xs_ret,ann_mean_xs_ret,ann_vol,sharpe_ann,cum_log_ret,cum_log_xs_ret,ref_strike_K,latest_futures_F,T_to_expiry_years,d2_Q,d2_P,N_d2_Q,N_d2_P,delta_P_risk_premium,observed_mean_delta,fraction_explained
-GC (stitched GCM26/GCQ26),112,-0.00067991,-0.171338,0.349258,-0.4906,-0.05615,-0.07615,5400.0,4366.6,0.09863,-1.991409,-2.145477,0.02321795,0.01595735,-0.0072606,-0.103,-0.070491
-SI (SIU26),113,-0.00188162,-0.474169,0.910959,-0.5205,-0.192445,-0.212624,85.0,65.03,0.263014,-0.806819,-1.073766,0.20988532,0.14146389,-0.06842142,-0.064,-1.069085
+asset,n_days,mu_log_ann,sigma_ann,ito_correction,mu_arith_ann,sharpe_log_xs,cum_log_ret,ref_strike_K,latest_futures_F,T_to_expiry_years,d2_Q,d2_P,N_d2_Q,N_d2_P,delta_P_risk_premium,observed_mean_delta,fraction_explained
+GC (stitched GCM26/GCQ26),112,-0.126338,0.349258,0.060991,-0.065347,-0.4906,-0.05615,5400.0,4366.6,0.09863,-1.991409,-2.05017,0.02321795,0.02017392,-0.00304403,-0.103,-0.029554
+SI (SIU26),113,-0.429169,0.910959,0.414923,-0.014246,-0.5205,-0.192445,85.0,65.03,0.263014,-0.806819,-0.81484,0.20988532,0.20758206,-0.00230326,-0.064,-0.035988
