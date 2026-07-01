@@ -1,137 +1,116 @@
 # Prediction Markets vs. Options-Implied Probabilities: Silver and Gold
 
-This project compares the risk-neutral probabilities embedded in COMEX futures options prices with the equivalent probabilities quoted on Polymarket, for Silver (SI) and Gold (GC) over the first half of 2026.
+This repository accompanies a research paper comparing the risk-neutral probabilities embedded in COMEX futures options prices with equivalent probabilities quoted on Polymarket, for Silver (SI) and Gold (GC) over the first half of 2026.
 
 ## Research question
 
-Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver settles above $X" on a given day close to N(d2) derived from the corresponding call option via the Black Scholes model?
+Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver settles above $X" on a given day close to N(d2) derived from the corresponding COMEX call option under the Black-76 model?
 
 Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at expiry. A Polymarket contract paying $1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
+
+## Sample
+
+| | |
+|---|---|
+| **Period** | 2025-12-29 to 2026-06-29 |
+| **Silver observations** | 1,345 (date × strike pairs) |
+| **Gold observations** | 1,326 (date × strike pairs) |
+| **Polymarket resolution** | 2026-06-30 17:00 EDT — all tracked strikes expired out-of-the-money |
 
 ## Instruments
 
 | Underlying | Futures contract | Strikes covered | Polymarket event |
 |---|---|---|---|
-| Silver (SI) | SIU26 (Sep 2026) | $65, $70, $75, $80, $85, $90, $95, $100 /oz | "Silver above $X end of June?" |
-| Gold (GC) | GCQ26 (Aug 2026) | $4600, $4800, $5000, $5200 /oz | "Gold above $X end of June?" |
+| Silver (SI) | SIU26 (Sep 2026) | $60, $65, $70, $75, $80, $85, $90, $95, $100, $110, $120, $140 /oz | "SI settles above $X on final trading day of June 2026?" |
+| Gold (GC) | GCQ26 (Aug 2026) | $4600, $4800, $5000, $5200, $5400, $5600, $5800, $6000, $6200, $6500, $7000, $8000 /oz | "GC settles above $X on final trading day of June 2026?" |
 
-## Note
+### Gold futures basis
 
-For Gold, the Active Month against which Polymarket resolves shifted during the sample period: GCM26 (June 2026 futures) was the Active Month from contract open until May 28 2026, after which GCQ26 (August 2026 futures) became the Active Month. The pipeline uses GCM26 settlement prices as the Black-76 forward input for the pre-roll period and GCQ26 from May 29 onwards. GCM26 historical options data was unavailable; GCQ26 implied volatility is used throughout as the volatility input.
-
-
+For Gold, the Active Month against which Polymarket resolves shifted during the sample period: GCM26 (June 2026 futures) was the Active Month from contract open until 2026-05-28, after which GCQ26 (August 2026 futures) became the Active Month. The pipeline uses GCM26 settlement prices as the Black-76 forward input for the pre-roll period and GCQ26 from 2026-05-29 onwards. GCM26 historical options data was unavailable; GCQ26 implied volatility is used throughout as the volatility input.
 
 ## Repository structure
 
 ```
 .
-├── Jupyternotebook.ipynb            # Main analysis notebook
-├── collect_daily.py                 # Daily data collector (run via GitHub Actions)
+├── _run_pipeline.py             # Standalone script: discovers Barchart CSVs,
+│                                #   computes IV + N(d2), fetches Polymarket,
+│                                #   saves merged_iv_polymarket.csv
+├── Jupyternotebook.ipynb        # Full analysis notebook (all sections, charts)
+├── fetch_volume_history.py      # Fetches Polymarket CLOB volume history
 │
-├── daily_polymarket.csv             # Accumulated Polymarket probabilities (appended daily)
-├── daily_options.csv                # Accumulated option prices from Barchart (appended daily)
-├── merged_iv_polymarket.csv         # Pipeline output: IV + N(d2) merged with Polymarket
+├── merged_iv_polymarket.csv     # Pipeline output: IV + N(d2) merged with Polymarket prices
+├── gold_silver_volume_history.csv  # Polymarket market volume by date
 │
-├── siu26_daily_historical-*.csv     # Silver futures daily price history (Barchart download)
-├── gcq26_daily_historical-*.csv     # Gold futures daily price history (Barchart download)
-├── siu6_*c_price-history-*.csv      # Silver option price histories by strike (Barchart download)
-├── gcq6_*c_price-history-*.csv      # Gold option price histories by strike (Barchart download)
+├── stats_summary.csv            # t-test results by asset and strike
+├── hac_robustness.csv           # HAC-corrected t-statistics (lags 5, 10, 20)
+├── convergence_regression.csv   # Δ ~ T-to-expiry regression coefficients
+├── timeseries_diagnostics.csv   # AR(1) coefficients, half-lives, ADF tests
+├── risk_premium_estimate.csv    # Risk-premium decomposition
+├── regime_robustness.csv        # Subsample robustness checks
+├── extreme_strike_robustness.csv
+├── null_benchmark.csv
+├── bidask_analysis.csv          # Bid-ask spread analysis (Silver)
+├── bidask_gc_analysis.csv       # Bid-ask spread analysis (Gold)
 │
-└── .github/
-    └── workflows/
-        └── collect_daily.yml        # GitHub Actions workflow (runs Mon-Fri at 9am UTC)
+├── nd2_vs_polymarket.png        # Main scatter/time-series chart
+├── moneyness_decomposition.png  # Δ decomposed by moneyness
+│
+├── requirements.txt
+└── .gitignore
 ```
 
-## Data sources
-
-### Historical option prices (Barchart)
-
-The `siu6_*` and `gcq6_*` CSV files were downloaded manually from [barchart.com](https://www.barchart.com). Each file contains the full price history for one strike. The last line of every file is a `"Downloaded from Barchart.com..."` footer that the pipeline strips automatically.
-
-Unit conventions (important for Black-76):
-- **Silver**: underlying price in \$/oz; option premium in \$/oz; strike in the *filename* is in ¢/oz (e.g. `7000c` = \$70.00/oz strike)
-- **Gold**: underlying price, option premium, and strike are all in \$/oz
-
-### Polymarket probabilities
-
-Fetched from the [Polymarket CLOB API](https://clob.polymarket.com/prices-history) using the market token IDs hardcoded in the notebook and `collect_daily.py`. No authentication is required.
+> **Note on Barchart data:** The raw options and futures price CSVs downloaded from Barchart (`siu6_*`, `gcq6_*`, `siu26_*`, `gcq26_*`, `gcm26_*`) are proprietary under Barchart's Terms of Service and are not included in this repository. To reproduce results from scratch, download the equivalent files from [barchart.com](https://www.barchart.com) and place them in the project directory — the pipeline discovers them automatically by filename pattern.
 
 ## Running the analysis
 
 ### Requirements
 
 ```
-pip install numpy pandas scipy requests matplotlib
+pip install -r requirements.txt
 ```
 
-Python 3.11 or newer recommended.
+Python 3.11 or newer.
 
-### Full historical pipeline (notebook)
+### Step 1 — obtain Barchart data (required for replication)
 
-Open `Jupyternotebook.ipynb` and run the cells in order. The pipeline cells (added below the original Polymarket fetch cells) will:
+Download price-history CSVs from barchart.com for each instrument and save them in the project directory. The pipeline expects the standard Barchart export filenames:
 
-1. Discover all Barchart CSV files in the project folder automatically
-2. Load underlying futures price histories
-3. Back out Black-76 implied volatility for every (date, strike) row via Brent's method
-4. Compute N(d2) — the risk-neutral probability P(F_T > K) under Black's model
-5. Re-fetch Polymarket price histories from the CLOB API
-6. Inner-join options and Polymarket data on (date, underlying, strike)
-7. Save `merged_iv_polymarket.csv` and `nd2_vs_polymarket.png`
+- **Silver futures:** `siu26_daily_historical-data-<date>.csv`
+- **Gold futures:** `gcq26_daily_historical-data-<date>.csv` and `gcm26_daily_historical-data-<date>.csv`
+- **Silver options:** `siu6_<strike>c_price-history-<date>.csv`
+- **Gold options:** `gcq6_<strike>c_price-history-<date>.csv`
 
-Key parameters at the top of the config cell:
+Filename conventions:
+- Silver strike in the filename is in ¢/oz — e.g. `7000c` = $70.00/oz, `1000c` = $100.00/oz
+- Gold strike is in $/oz — e.g. `4600c` = $4,600/oz
 
-| Variable | Default | Description |
+### Step 2 — run the pipeline
+
+```bash
+python _run_pipeline.py
+```
+
+This script:
+1. Discovers all Barchart CSV files in the project directory automatically
+2. Loads and aligns underlying futures price histories (applying the GCM26→GCQ26 basis adjustment for Gold)
+3. Backs out Black-76 implied volatility for every (date, strike) row via Brent's method
+4. Computes N(d2) — the risk-neutral probability P(F_T > K)
+5. Fetches Polymarket price histories from the CLOB API (no authentication required)
+6. Inner-joins options and Polymarket data on (date, underlying, strike)
+7. Saves `merged_iv_polymarket.csv`
+
+### Step 3 — run the notebook
+
+Open `Jupyternotebook.ipynb` and run all cells. The notebook reads `merged_iv_polymarket.csv` and produces all tables, statistical tests, robustness checks, and charts used in the paper.
+
+Key config parameters (top of notebook):
+
+| Variable | Value | Description |
 |---|---|---|
-| `EXPIRY_SI` | 2026-09-26 | SIQ26 options last trading day |
+| `EXPIRY_SI` | 2026-09-25 | SIU26 options last trading day |
 | `EXPIRY_GC` | 2026-07-28 | GCQ26 options last trading day |
 | `RISK_FREE` | 0.045 | Annualised risk-free rate |
 | `GC_BASIS_CUTOFF` | 2026-05-29 | Date Gold Active Month rolled from GCM26 to GCQ26 |
-
-Verify expiry dates against the [CME Group contract specifications](https://www.cmegroup.com/markets/metals/precious/silver.html) before using results in the paper.
-
-### Daily data collector (script)
-
-`collect_daily.py` can be run locally or via GitHub Actions. It appends one row per (underlying, strike) to `daily_polymarket.csv` and `daily_options.csv`, and is idempotent — re-running on the same day skips rows that already exist.
-
-**Polymarket collection** — no key required:
-
-```bash
-python collect_daily.py
-```
-
-**Barchart option prices** — requires a free API key:
-
-1. Register at <https://www.barchart.com/ondemand/free-api-key> (Basic tier: 25 calls/day; the script uses 2)
-2. Set the environment variable before running:
-
-```bash
-export BARCHART_API_KEY=your_key_here
-python collect_daily.py
-```
-
-## GitHub Actions setup
-
-The workflow in `.github/workflows/collect_daily.yml` runs the collector automatically on weekdays at 9am UTC and commits any new rows back to the repository.
-
-**One-time setup:**
-
-```bash
-# Initialise the repo and push to GitHub
-git init
-git add .
-git commit -m "init: research paper polymarket pipeline"
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-git push -u origin main
-```
-
-Then add your Barchart key as a repository secret:
-- GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-- Name: `BARCHART_API_KEY`
-- Value: your key
-
-The workflow will commit under the `github-actions[bot]` identity. If no new data is available (market holiday, weekend), it exits cleanly without making a commit.
-
-The Polymarket collector runs regardless of whether `BARCHART_API_KEY` is set, so `daily_polymarket.csv` accumulates every weekday even before you add the key.
 
 ## Black-76 model reference
 
@@ -144,6 +123,11 @@ d1 = [ln(F/K) + (σ²/2) * T] / (σ * √T)
 d2 = d1 - σ * √T
 ```
 
-where F is the futures price, K is the strike, T is time to expiry in years, r is the risk-free rate, and σ is the implied volatility. N(d2) is the risk-neutral probability that F_T > K at expiry, which is the quantity compared against the Polymarket "yes" price.
+where F is the futures price, K is the strike, T is time to expiry in years, r is the risk-free rate, and σ is the implied volatility. N(d2) is the risk-neutral probability that F_T > K at expiry — the quantity compared against the Polymarket "yes" price throughout this paper.
 
 Implied volatility is backed out numerically using Brent's method (`scipy.optimize.brentq`), searching over σ ∈ (0, 30).
+
+## Data sources
+
+- **Options and futures prices:** [Barchart.com](https://www.barchart.com) (not redistributed — see note above)
+- **Prediction market prices:** [Polymarket CLOB API](https://clob.polymarket.com/prices-history) — public, no authentication required
