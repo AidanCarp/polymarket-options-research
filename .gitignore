@@ -1,0 +1,23 @@
+# Barchart proprietary data — do not commit
+# These files are licensed for personal use only under Barchart's Terms of Service.
+# Keep locally on disk; never publish to a public repository.
+*_price-history-*.csv
+*_historical-*.csv
+*_intraday-*.csv
+
+# Daily collector outputs (removed from repo; kept for local use)
+daily_polymarket.csv
+daily_options.csv
+
+# Windows system files
+desktop.ini
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
