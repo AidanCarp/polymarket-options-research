@@ -4,17 +4,33 @@ This repository accompanies a research paper comparing the risk-neutral probabil
 
 ## Research question
 
-Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver settles above $X" on a given day close to N(d2) derived from the corresponding COMEX call option under the Black-76 model?
+Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver/Gold settles above $X" on a given day close to N(d2) derived from the corresponding COMEX call option under the Black-76 model?
 
 Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at expiry. A Polymarket contract paying $1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
+
+## Key findings
+
+Polymarket systematically underprices the risk-neutral probability N(d2) for both assets throughout the sample. The gap is large, persistent, and statistically overwhelming under all specifications.
+
+| | Gold (GC) | Silver (SI) |
+|---|---|---|
+| Mean Δ = N(d2) − PM price | −0.089 | −0.055 |
+| Plain t-statistic | −29.5 | −21.6 |
+| HAC t-statistic (Newey-West, lag 5) | −15.9 | −14.6 |
+| HAC t-statistic (Newey-West, lag 20) | −9.3 | −9.6 |
+| AR(1) coefficient (daily mean Δ) | 0.768 | 0.466 |
+| Half-life of gap | 2.6 trading days | 0.9 trading days |
+| Convergence R² (Δ ~ T-to-expiry) | 0.309 | 0.056 |
+
+The gap converges toward zero as contracts approach expiry — especially strongly for Gold — consistent with late-stage price discovery rather than a fixed structural mispricing. A realized risk-premium adjustment explains less than 1% of the Gold gap and goes in the wrong direction for Silver. All 24 tracked Polymarket contracts expired out-of-the-money on 2026-06-30.
 
 ## Sample
 
 | | |
 |---|---|
 | **Period** | 2025-12-29 to 2026-06-29 |
-| **Silver observations** | 1,345 (date × strike pairs) |
 | **Gold observations** | 1,326 (date × strike pairs) |
+| **Silver observations** | 1,345 (date × strike pairs) |
 | **Polymarket resolution** | 2026-06-30 17:00 EDT — all tracked strikes expired out-of-the-money |
 
 ## Instruments
@@ -32,28 +48,28 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 
 ```
 .
-├── _run_pipeline.py             # Standalone script: discovers Barchart CSVs,
-│                                #   computes IV + N(d2), fetches Polymarket,
-│                                #   saves merged_iv_polymarket.csv
-├── Jupyternotebook.ipynb        # Full analysis notebook (all sections, charts)
-├── fetch_volume_history.py      # Fetches Polymarket CLOB volume history
+├── _run_pipeline.py               # Standalone script: discovers Barchart CSVs,
+│                                  #   computes IV + N(d2), fetches Polymarket,
+│                                  #   saves merged_iv_polymarket.csv
+├── Jupyternotebook.ipynb          # Full analysis notebook (all sections, charts)
+├── fetch_volume_history.py        # Fetches Polymarket CLOB volume history
 │
-├── merged_iv_polymarket.csv     # Pipeline output: IV + N(d2) merged with Polymarket prices
-├── gold_silver_volume_history.csv  # Polymarket market volume by date
+├── merged_iv_polymarket.csv       # Pipeline output: IV + N(d2) merged with Polymarket prices
+├── gold_silver_volume_history.csv # Polymarket market volume by date and asset
 │
-├── stats_summary.csv            # t-test results by asset and strike
-├── hac_robustness.csv           # HAC-corrected t-statistics (lags 5, 10, 20)
-├── convergence_regression.csv   # Δ ~ T-to-expiry regression coefficients
-├── timeseries_diagnostics.csv   # AR(1) coefficients, half-lives, ADF tests
-├── risk_premium_estimate.csv    # Risk-premium decomposition
-├── regime_robustness.csv        # Subsample robustness checks
-├── extreme_strike_robustness.csv
-├── null_benchmark.csv
-├── bidask_analysis.csv          # Bid-ask spread analysis (Silver)
-├── bidask_gc_analysis.csv       # Bid-ask spread analysis (Gold)
+├── stats_summary.csv              # One-sample t-test on Δ, per asset and per strike
+├── hac_robustness.csv             # Newey-West HAC t-statistics (lags 5, 10, 20)
+├── convergence_regression.csv     # OLS: Δ ~ T-to-expiry, per asset and pooled
+├── timeseries_diagnostics.csv     # AR(1) coefficients, half-lives, ADF stationarity tests
+├── risk_premium_estimate.csv      # Realized drift → probability-space risk-premium adjustment
+├── regime_robustness.csv          # t-test split by low-IV / high-IV regime
+├── extreme_strike_robustness.csv  # t-test with and without the two most extreme OTM strikes
+├── null_benchmark.csv             # Permutation null: observed Δ vs 1,000 relabeling nulls
+├── bidask_analysis.csv            # Bid-ask spread robustness (Silver)
+├── bidask_gc_analysis.csv         # Bid-ask spread robustness (Gold)
 │
-├── nd2_vs_polymarket.png        # Main scatter/time-series chart
-├── moneyness_decomposition.png  # Δ decomposed by moneyness
+├── nd2_vs_polymarket.png          # Main scatter/time-series chart
+├── moneyness_decomposition.png    # Δ decomposed by moneyness
 │
 ├── requirements.txt
 └── .gitignore
@@ -69,7 +85,7 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 pip install -r requirements.txt
 ```
 
-Python 3.11 or newer.
+Python 3.11 or newer. The notebook uses `statsmodels` for HAC standard errors and ADF tests, and `matplotlib` for all charts — both are listed in `requirements.txt`.
 
 ### Step 1 — obtain Barchart data (required for replication)
 
@@ -81,8 +97,8 @@ Download price-history CSVs from barchart.com for each instrument and save them 
 - **Gold options:** `gcq6_<strike>c_price-history-<date>.csv`
 
 Filename conventions:
-- Silver strike in the filename is in ¢/oz — e.g. `7000c` = $70.00/oz, `1000c` = $100.00/oz
-- Gold strike is in $/oz — e.g. `4600c` = $4,600/oz
+- Silver option strikes in filenames are in ¢/oz — e.g. `7000c` = $70.00/oz. Barchart drops a trailing zero for the $100 strike, so that file is `siu6_1000c_...` (not `10000c`); the pipeline handles this automatically.
+- Gold option strikes are in $/oz — e.g. `4600c` = $4,600/oz.
 
 ### Step 2 — run the pipeline
 
