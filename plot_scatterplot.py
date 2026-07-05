@@ -15,7 +15,7 @@ for asset, color, label in [
 ]:
     sub = df[df["underlying"] == asset]
     ax.scatter(sub["nd2"], sub["pm_prob"],
-               color=color, alpha=0.18, s=6, linewidths=0,
+               color=color, alpha=0.35, s=6, linewidths=0,
                label=f"{label} ($n={len(sub):,}$)", zorder=3)
 
 # 45-degree identity line
@@ -32,7 +32,9 @@ ax.set_ylabel("Polymarket probability", fontsize=8)
 ax.set_title("$N(d_2)$ vs Polymarket probability", fontsize=9, fontweight="bold")
 ax.tick_params(labelsize=7)
 
-ax.legend(fontsize=7, frameon=False, loc="upper left")
+legend = ax.legend(fontsize=7, frameon=False, loc="upper left")
+for handle in legend.legend_handles:
+    handle.set_alpha(1.0)
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
