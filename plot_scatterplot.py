@@ -9,13 +9,14 @@ df = pd.read_csv(os.path.join(DATA_DIR, "merged_iv_polymarket.csv"))
 
 fig, ax = plt.subplots(figsize=(5, 5))
 
+# GOLD_COLOR = "#B8860B"  SILVER_COLOR = "#4A6FA5"
 for asset, color, label in [
-    ("GC", "#1a1a1a", "Gold (GCQ26)"),
-    ("SI", "#888888", "Silver (SIU26)"),
+    ("GC", "#B8860B", "Gold (GCQ26)"),
+    ("SI", "#4A6FA5", "Silver (SIU26)"),
 ]:
     sub = df[df["underlying"] == asset]
     ax.scatter(sub["nd2"], sub["pm_prob"],
-               color=color, alpha=0.35, s=6, linewidths=0,
+               color=color, alpha=0.25, s=6, linewidths=0,
                label=f"{label} ($n={len(sub):,}$)", zorder=3)
 
 # 45-degree identity line
@@ -32,9 +33,7 @@ ax.set_ylabel("Polymarket probability", fontsize=8)
 ax.set_title("$N(d_2)$ vs Polymarket probability", fontsize=9, fontweight="bold")
 ax.tick_params(labelsize=7)
 
-legend = ax.legend(fontsize=7, frameon=False, loc="upper left")
-for handle in legend.legend_handles:
-    handle.set_alpha(1.0)
+ax.legend(fontsize=7, frameon=False, loc="upper left")
 
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)

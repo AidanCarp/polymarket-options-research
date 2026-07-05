@@ -94,11 +94,12 @@ si_cum = si_s.cumsum()
 
 fig, ax = plt.subplots(figsize=(7, 3.5))
 
-ax.plot(gc_cum.index, gc_cum.values / 1000, color='#1a1a1a', linewidth=1.4, label='Gold (GCQ26)', zorder=3)
-ax.plot(si_cum.index, si_cum.values / 1000, color='#888888', linewidth=1.4, label='Silver (SIU26)', linestyle='--', zorder=3)
+# GOLD_COLOR = "#B8860B"  SILVER_COLOR = "#4A6FA5"
+ax.plot(gc_cum.index, gc_cum.values / 1000, color='#B8860B', linewidth=1.4, label='Gold (GCQ26)', zorder=3)
+ax.plot(si_cum.index, si_cum.values / 1000, color='#4A6FA5', linewidth=1.4, label='Silver (SIU26)', linestyle='--', zorder=3)
 
-ax.fill_between(gc_cum.index, gc_cum.values / 1000, alpha=0.06, color='#1a1a1a')
-ax.fill_between(si_cum.index, si_cum.values / 1000, alpha=0.06, color='#888888')
+ax.fill_between(gc_cum.index, gc_cum.values / 1000, alpha=0.06, color='#B8860B')
+ax.fill_between(si_cum.index, si_cum.values / 1000, alpha=0.06, color='#4A6FA5')
 
 ax.set_ylabel('Cumulative volume (USD thousands)', fontsize=8)
 ax.legend(fontsize=8, frameon=False)
