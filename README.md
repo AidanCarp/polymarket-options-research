@@ -156,4 +156,4 @@ Implied volatility is backed out numerically using Brent's method (`scipy.optimi
 
 ## Authorship and AI assistance
 
-Research design, methodology, and analysis were conducted by the author. AI tools were used to assist with code implementation and prose editing; all research decisions and interpretations are the author's own.
+Research design, methodology, and analysis were conducted by the author. AI tools were used to assist with code implementation. All research decisions and interpretations are the author's own.
