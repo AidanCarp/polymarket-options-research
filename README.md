@@ -6,7 +6,7 @@ This repository accompanies a research paper comparing the risk-neutral probabil
 
 Do prediction markets price tail events in commodity futures consistently with the options market? Specifically, is the Polymarket "yes" price for "Silver/Gold settles above $X" on a given day close to N(d2) derived from the corresponding COMEX call option under the Black-76 model?
 
-Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at expiry. A Polymarket contract paying $1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
+Under Black-76, N(d2) is the risk-neutral probability that the futures price exceeds the strike at the Polymarket resolution date. A Polymarket contract paying $1 if the same event occurs is theoretically worth the same amount, modulo liquidity, transaction costs, and any calendar basis between the two instruments.
 
 ## Key findings
 
@@ -14,23 +14,24 @@ Polymarket systematically underprices the risk-neutral probability N(d2) for bot
 
 | | Gold (GC) | Silver (SI) |
 |---|---|---|
-| Mean Δ = N(d2) − PM price | −0.089 | −0.055 |
-| Plain t-statistic | −29.5 | −21.6 |
-| HAC t-statistic (Newey-West, lag 5) | −15.9 | −14.6 |
-| HAC t-statistic (Newey-West, lag 20) | −9.3 | −9.6 |
-| AR(1) coefficient (daily mean Δ) | 0.768 | 0.466 |
+| Mean Δ = N(d2) − PM price | −0.089 | −0.053 |
+| Plain t-statistic | −29.5 | −20.7 |
+| HAC t-statistic (Newey-West, lag 5) | −15.9 | −13.9 |
+| HAC t-statistic (Newey-West, lag 20) | −9.3 | −9.2 |
+| AR(1) coefficient (daily mean Δ) | 0.768 | 0.460 |
 | Half-life of gap | 2.6 trading days | 0.9 trading days |
-| Convergence R² (Δ ~ T-to-expiry) | 0.309 | 0.056 |
+| Convergence R² (Δ ~ T-to-resolution) | 0.309 | 0.051 |
 
-The gap converges toward zero as contracts approach expiry — especially strongly for Gold — consistent with late-stage price discovery rather than a fixed structural mispricing. A realized risk-premium adjustment explains less than 1% of the Gold gap and goes in the wrong direction for Silver. All 24 tracked Polymarket contracts expired out-of-the-money on 2026-06-30.
+The gap converges toward zero as contracts approach the Polymarket resolution date — especially strongly for Gold — consistent with late-stage price discovery rather than a fixed structural mispricing. A realized risk-premium adjustment explains less than 1% of the Gold gap and goes in the wrong direction for Silver. All 24 tracked Polymarket contracts expired out-of-the-money on 2026-06-30.
 
 ## Sample
 
 | | |
 |---|---|
 | **Period** | 2025-12-29 to 2026-06-29 |
-| **Gold observations** | 1,326 (date × strike pairs) |
-| **Silver observations** | 1,345 (date × strike pairs) |
+| **Total observations** | 2,671 (date × strike pairs) |
+| **Gold observations** | 1,326 |
+| **Silver observations** | 1,345 |
 | **Polymarket resolution** | 2026-06-30 17:00 EDT — all tracked strikes expired out-of-the-money |
 
 ## Instruments
@@ -59,7 +60,7 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 │
 ├── stats_summary.csv              # One-sample t-test on Δ, per asset and per strike
 ├── hac_robustness.csv             # Newey-West HAC t-statistics (lags 5, 10, 20)
-├── convergence_regression.csv     # OLS: Δ ~ T-to-expiry, per asset and pooled
+├── convergence_regression.csv     # OLS: Δ ~ T-to-resolution, per asset and pooled
 ├── timeseries_diagnostics.csv     # AR(1) coefficients, half-lives, ADF stationarity tests
 ├── risk_premium_estimate.csv      # Realized drift → probability-space risk-premium adjustment
 ├── regime_robustness.csv          # t-test split by low-IV / high-IV regime
@@ -68,8 +69,12 @@ For Gold, the Active Month against which Polymarket resolves shifted during the 
 ├── bidask_analysis.csv            # Bid-ask spread robustness (Silver)
 ├── bidask_gc_analysis.csv         # Bid-ask spread robustness (Gold)
 │
-├── nd2_vs_polymarket.png          # Main scatter/time-series chart
-├── moneyness_decomposition.png    # Δ decomposed by moneyness
+├── cumulative_volume.pdf          # Polymarket cumulative trading volume over time
+├── cumulative_volume.png
+├── moneyness_decomposition.pdf    # Mean |Δ| by strike moneyness, Gold and Silver
+├── moneyness_decomposition.png
+├── nd2_vs_polymarket.pdf          # Scatter: N(d2) vs Polymarket probability
+├── nd2_vs_polymarket.png
 │
 ├── requirements.txt
 └── .gitignore
@@ -119,12 +124,13 @@ This script:
 
 Open `Jupyternotebook.ipynb` and run all cells. The notebook reads `merged_iv_polymarket.csv` and produces all tables, statistical tests, robustness checks, and charts used in the paper.
 
-Key config parameters (top of notebook):
+Key config parameters (top of pipeline and notebook):
 
 | Variable | Value | Description |
 |---|---|---|
-| `EXPIRY_SI` | 2026-09-25 | SIU26 options last trading day |
-| `EXPIRY_GC` | 2026-07-28 | GCQ26 options last trading day |
+| `PM_RESOLUTION_DATE` | 2026-06-30 | Polymarket resolution date — used as T horizon for all N(d2) calculations |
+| `EXPIRY_SI` | 2026-09-25 | SIU26 options last trading day (defined but not used for T) |
+| `EXPIRY_GC` | 2026-07-28 | GCQ26 options last trading day (defined but not used for T) |
 | `RISK_FREE` | 0.045 | Annualised risk-free rate |
 | `GC_BASIS_CUTOFF` | 2026-05-29 | Date Gold Active Month rolled from GCM26 to GCQ26 |
 
@@ -139,7 +145,7 @@ d1 = [ln(F/K) + (σ²/2) * T] / (σ * √T)
 d2 = d1 - σ * √T
 ```
 
-where F is the futures price, K is the strike, T is time to expiry in years, r is the risk-free rate, and σ is the implied volatility. N(d2) is the risk-neutral probability that F_T > K at expiry — the quantity compared against the Polymarket "yes" price throughout this paper.
+where F is the futures price, K is the strike, r is the risk-free rate, and σ is the implied volatility. **T is time in years from the observation date to the Polymarket resolution date (2026-06-30)** — not the option's own last trading day. This ensures the N(d2) horizon is identical to the Polymarket contract's settlement horizon. N(d2) is the risk-neutral probability that F_T > K at the resolution date — the quantity compared against the Polymarket "yes" price throughout this paper.
 
 Implied volatility is backed out numerically using Brent's method (`scipy.optimize.brentq`), searching over σ ∈ (0, 30).
 
@@ -147,3 +153,7 @@ Implied volatility is backed out numerically using Brent's method (`scipy.optimi
 
 - **Options and futures prices:** [Barchart.com](https://www.barchart.com) (not redistributed — see note above)
 - **Prediction market prices:** [Polymarket CLOB API](https://clob.polymarket.com/prices-history) — public, no authentication required
+
+## Authorship and AI assistance
+
+Research design, methodology, and analysis were conducted by the author. AI tools were used to assist with code implementation and prose editing; all research decisions and interpretations are the author's own.
