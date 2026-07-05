@@ -117,6 +117,8 @@ ax.annotate('Resolution\n30 Jun 2026',
     arrowprops=dict(arrowstyle='->', color='#888', lw=0.8))
 
 plt.tight_layout()
-plt.savefig('/mnt/user-data/outputs/cumulative_volume.pdf', bbox_inches='tight', dpi=300)
-plt.savefig('/mnt/user-data/outputs/cumulative_volume.png', bbox_inches='tight', dpi=300)
+import os as _os
+_out = _os.path.dirname(_os.path.abspath(__file__))
+plt.savefig(_os.path.join(_out, 'cumulative_volume.pdf'), bbox_inches='tight', dpi=300)
+plt.savefig(_os.path.join(_out, 'cumulative_volume.png'), bbox_inches='tight', dpi=300)
 print("Saved")

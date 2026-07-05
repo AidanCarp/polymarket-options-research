@@ -131,7 +131,7 @@ def process_options(option_files, parse_strike_fn, spot_df, expiry, label):
         opt = opt.merge(spot_df, on="Time", how="inner")
         n_valid = 0
         for _, row in opt.iterrows():
-            T   = (expiry - row["Time"].to_pydatetime()).days / 365.0
+            T   = (PM_RESOLUTION_DATE.to_pydatetime() - row["Time"].to_pydatetime()).days / 365.0
             iv  = implied_vol(row["option_price"], row["F"], K, T, RISK_FREE)
             nd2 = black76_nd2(row["F"], K, T, RISK_FREE, iv)
             n_valid += int(not np.isnan(iv))
