@@ -13,6 +13,7 @@ within each underlying, per UTC calendar day.
 Output: gold_silver_volume_history.csv  (date, underlying, daily_volume)
 """
 
+import os
 import time
 import requests
 import pandas as pd
@@ -29,7 +30,8 @@ EVENTS = {
 START_DATE = date(2025, 12, 26)   # contract open
 END_DATE   = date(2026, 6, 30)    # resolution
 
-OUTPUT = r"C:\Users\Aidan\Desktop\Research paper Polymarket\gold_silver_volume_history.csv"
+_DIR   = os.path.dirname(os.path.abspath(__file__))
+OUTPUT = os.path.join(_DIR, "gold_silver_volume_history.csv")
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
