@@ -1,6 +1,8 @@
 # Prediction Markets vs. Options-Implied Probabilities: Silver and Gold
 
-This repository accompanies a research paper comparing the risk-neutral probabilities embedded in COMEX futures options prices with equivalent probabilities quoted on Polymarket, for Silver (SI) and Gold (GC) over the first half of 2026.
+**Published preprint (DOI):** https://doi.org/10.5281/zenodo.21232133
+
+This repository accompanies a research paper comparing the risk-neutral probabilities embedded in CME futures options prices with equivalent probabilities quoted on Polymarket, for Silver (SI) and Gold (GC) over the first half of 2026.
 
 ## Research question
 
